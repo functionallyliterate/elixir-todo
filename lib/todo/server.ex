@@ -2,27 +2,35 @@ defmodule Todo.Server do
   use GenServer
 
   def start_link(name) do
-    GenServer.start_link(__MODULE__, name)
+    IO.puts "Starting todo server for #{name}"
+    GenServer.start_link(__MODULE__, name, name: via_tuple(name))
   end
 
-  def add(pid, entry) do
-    GenServer.cast(pid, {:add, entry})
+  defp via_tuple(name) do
+    {:via, Todo.ProcessRegistry, {:todo_server, name}}
   end
 
-  def update(pid, entry_id, updater_fun) do
-    GenServer.cast(pid, {:update, entry_id, updater_fun})
+  def whereis(name) do
+    Todo.ProcessRegistry.whereis_name({:todo_server, name})
   end
 
-  def delete(pid, entry_id) do
-    GenServer.cast(pid, {:delete, entry_id})
+  def add(todo_server, entry) do
+    GenServer.cast(todo_server, {:add, entry})
   end
 
-  def entries(pid, date) do
-    GenServer.call(pid, {:entries, date})
+  def update(todo_server, entry_id, updater_fun) do
+    GenServer.cast(todo_server, {:update, entry_id, updater_fun})
+  end
+
+  def delete(todo_server, entry_id) do
+    GenServer.cast(todo_server, {:delete, entry_id})
+  end
+
+  def entries(todo_server, date) do
+    GenServer.call(todo_server, {:entries, date})
   end
 
   def init(name) do
-    IO.puts "Starting todo server for #{name}"
     send(self(), {:long_init, name})
     {:ok, nil}
   end
